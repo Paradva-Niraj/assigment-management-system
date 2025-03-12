@@ -3,8 +3,6 @@ from tkinter import messagebox
 import requests
 
 # redirection components
-import facultyreg as f
-import facultylogin as fl
 
 
 # FastAPI API URLs
@@ -13,11 +11,13 @@ LOGIN_API_URL = "http://127.0.0.1:8000/faculty/login"
 
 # Function to Open Faculty Registration Window
 def open_register(root):
+    import facultyreg as f  
     f.facultyregistration(root)
 
 
 # Function to Open Faculty Login Window
 def open_login(root):
+    import facultylogin as fl
     fl.facultylogin(root)
 
 

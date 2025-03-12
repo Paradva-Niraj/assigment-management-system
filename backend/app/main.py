@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile,status
 from fastapi.params import Body
 from.database import engine, SessionLocal
 from .models import Base, Faculty, Assignment, Submission
@@ -12,6 +12,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel, EmailStr
 from .database import Base,engine,SessionLocal,get_password_hash
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
 
 # file upload
 import shutil
@@ -75,12 +77,9 @@ def upload_assignment(
     semester: str, 
     subject: str,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    faculty: Faculty = Depends(get_current_user)
+    faculty: Faculty = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """
-    Uploads an assignment. Only logged-in faculty can upload.
-    """
     file_location = f"{UPLOAD_DIR}/{file.filename}"
     
     with open(file_location, "wb") as buffer:
@@ -99,3 +98,26 @@ def upload_assignment(
     db.refresh(new_assignment)
 
     return {"message": "Assignment uploaded successfully!", "file_path": file_location}
+
+# View Faculty's Assignments API
+@app.get("/assignments/view")
+def view_assignments(db: Session = Depends(get_db), faculty: Faculty = Depends(get_current_user)):
+    assignments = db.query(Assignment).filter(Assignment.uploaded_by == faculty.id).all()
+    return assignments
+
+# Delete Assignment API
+@app.delete("/assignments/delete/{assignment_id}")
+def delete_assignment(assignment_id: int, db: Session = Depends(get_db), faculty: Faculty = Depends(get_current_user)):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id, Assignment.uploaded_by == faculty.id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    # Delete the file
+    if os.path.exists(assignment.file_path):
+        os.remove(assignment.file_path)
+
+    # Remove from database
+    db.delete(assignment)
+    db.commit()
+
+    return {"message": "Assignment deleted successfully"}

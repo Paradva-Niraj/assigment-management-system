@@ -23,7 +23,7 @@ class Assignment(Base):
     file_path = Column(String)
     semester = Column(String)
     subject = Column(String)
-    uploaded_by = Column(Integer, ForeignKey('Faculty.id'))
+    uploaded_by = Column(String)
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class Submission(Base):
