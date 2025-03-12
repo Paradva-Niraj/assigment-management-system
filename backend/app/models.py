@@ -1,14 +1,18 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from .database import Base
+from .database import Base,engine
 import datetime
 
-class Faculty(Base):
-    __tablename__ = 'faculties'
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
+class Faculty(Base):
+    __tablename__ = "faculty"
+    
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     password = Column(String)
+
 
 class Assignment(Base):
     __tablename__ = 'assignments'
@@ -19,7 +23,7 @@ class Assignment(Base):
     file_path = Column(String)
     semester = Column(String)
     subject = Column(String)
-    uploaded_by = Column(Integer, ForeignKey('faculties.id'))
+    uploaded_by = Column(Integer, ForeignKey('Faculty.id'))
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class Submission(Base):
