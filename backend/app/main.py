@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile,status
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile,status,Form
 from fastapi.params import Body
 from.database import engine, SessionLocal
 from .models import Base, Faculty, Assignment, Submission
@@ -66,57 +66,66 @@ def register_faculty(faculty: FacultyCreate, db: Session = Depends(get_db)):
     db.refresh(new_faculty)
     return {"message": "Faculty registered successfully"}
 
+# Upload Assignment File
+UPLOAD_FOLDER = "uploads/assignments/"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-@app.post("/assignments/upload")
-def upload_assignment(
-    title: str, 
-    description: str, 
-    semester: str, 
-    subject: str,
+@app.post("/faculty/upload_assignment/")
+async def upload_assignment(
+    title: str = Form(...),
+    description: str = Form(...),
+    semester: str = Form(...),
+    subject: str = Form(...),
+    uploaded_by: str = Form(...),
     file: UploadFile = File(...),
-    faculty: Faculty = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    file_location = f"{UPLOAD_DIR}/{file.filename}"
+    try:
+        # Generate safe file path
+        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+
+        # Read and write file safely
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Save to database
+        new_assignment = Assignment(
+            title=title,
+            description=description,
+            semester=semester,
+            subject=subject,
+            uploaded_by=uploaded_by,
+            file_path=file_path
+        )
+        db.add(new_assignment)
+        db.commit()
+        db.refresh(new_assignment)
+
+        return {"message": "Assignment uploaded successfully", "file_path": file_path}
     
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        return {"error": f"Upload failed: {str(e)}"}
 
-    new_assignment = Assignment(
-        title=title,
-        description=description,
-        file_path=file_location,
-        semester=semester,
-        subject=subject,
-        uploaded_by=faculty.id
-    )
-    db.add(new_assignment)
-    db.commit()
-    db.refresh(new_assignment)
-
-    return {"message": "Assignment uploaded successfully!", "file_path": file_location}
-
-# View Faculty's Assignments API
-@app.get("/assignments/view")
-def view_assignments(db: Session = Depends(get_db), faculty: Faculty = Depends(get_current_user)):
-    assignments = db.query(Assignment).filter(Assignment.uploaded_by == faculty.id).all()
+@app.get("/faculty/{email}/assignments")
+def get_faculty_assignments(email: str, db: Session = Depends(get_db)):
+    assignments = db.query(Assignment).filter(Assignment.uploaded_by == email).all()
+    # if not assignments:
+        # return {"message": "No assignments found"}
     return assignments
 
-# Delete Assignment API
-@app.delete("/assignments/delete/{assignment_id}")
-def delete_assignment(assignment_id: int, db: Session = Depends(get_db), faculty: Faculty = Depends(get_current_user)):
-    assignment = db.query(Assignment).filter(Assignment.id == assignment_id, Assignment.uploaded_by == faculty.id).first()
+
+@app.delete("/faculty/delete_assignment/{assignment_id}")
+def delete_assignment(assignment_id: int, db: Session = Depends(get_db)):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
 
-    # Delete the file
+    # Delete file from server (optional)
+    import os
     if os.path.exists(assignment.file_path):
         os.remove(assignment.file_path)
 
-    # Remove from database
     db.delete(assignment)
     db.commit()
 

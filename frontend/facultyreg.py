@@ -11,7 +11,7 @@ def facultyregistration(r):
     root = tk.Toplevel(r)
     # root = tk.  Tk()
     root.title("Faculty Registration")
-    root.geometry("600x600")
+    root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0")
     root.resizable(False, False)
 
 
