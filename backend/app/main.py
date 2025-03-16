@@ -190,7 +190,7 @@ def get_assignments(semester: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No assignments found")
 
     return [{"id": a.id, "title": a.title, "subject": a.subject, "description": a.description, "file_path": a.file_path} for a in assignments]
-    
+
 @app.get("{file_path:path}")
 def download_file(file_path: str):
     file_location = os.path.join("uploads", file_path)  # Ensure correct folder
