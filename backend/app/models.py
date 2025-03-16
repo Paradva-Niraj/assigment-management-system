@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from .database import Base,engine
 import datetime
 from passlib.context import CryptContext
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
@@ -19,16 +20,11 @@ class Faculty(Base):
 class Student(Base):
     __tablename__ = "students"
 
-    prn = Column(String, primary_key=True, unique=True, index=True)  # PRN as unique ID
-    name = Column(String, nullable=False)
-    semester = Column(String, nullable=False)
-    password = Column(String, nullable=False)  # Hashed password
-
-    def verify_password(self, plain_password):
-        return pwd_context.verify(plain_password, self.password)
-
-    def set_password(self, plain_password):
-        self.password = pwd_context.hash(plain_password)
+    id = Column(Integer, primary_key=True, index=True)
+    prn = Column(String, unique=True, index=True)
+    name = Column(String)
+    semester = Column(String)
+    password = Column(String)
 
 class Assignment(Base):
     __tablename__ = 'assignments'
