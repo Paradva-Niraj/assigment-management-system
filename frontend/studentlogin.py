@@ -119,16 +119,44 @@ def student_dashboard(prn, semester):
 
         if save_location:
             try:
-                file_response = requests.get(f"{API_URL}/download/{file_name}", stream=True)
-                if file_response.status_code == 200:
+                url = f"{API_URL}/download/{file_name}"
+                print(f"Downloading from: {url}")  # Debugging
+
+                response = requests.get(url, stream=True)
+                if response.status_code == 200:
                     with open(save_location, "wb") as f:
-                        for chunk in file_response.iter_content(chunk_size=1024):
-                            f.write(chunk)
+                        for chunk in response.iter_content(chunk_size=1024):
+                            if chunk:  # Ensure chunk is not empty
+                                f.write(chunk)
                     messagebox.showinfo("Success", "Assignment downloaded successfully!")
                 else:
-                    messagebox.showerror("Error", "Failed to download the file.")
+                    messagebox.showerror("Error", f"Failed to download the file. Status Code: {response.status_code}")
+
             except Exception as e:
                 messagebox.showerror("Error", f"Download failed: {e}")
+
+    def upload_submission():
+        selected_item = tree.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Please select an assignment to upload your submission.")
+            return
+
+        item = tree.item(selected_item)
+        assignment_id = item["values"][0]  # Extract assignment ID
+
+        file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+        if not file_path:
+            return
+
+        files = {"file": open(file_path, "rb")}
+        data = {"assignment_id": assignment_id, "student_prn": prn}
+
+        response = requests.post(f"{API_URL}/student/upload_submission/", files=files, data=data)
+
+        if response.status_code == 200:
+            messagebox.showinfo("Success", "Submission uploaded successfully!")
+        else:
+            messagebox.showerror("Error", "Failed to upload submission")
 
     fetch_assignments()
     def logout():
@@ -136,6 +164,10 @@ def student_dashboard(prn, semester):
         studentlogin() 
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)
     tk.Button(dashboard_window, text="Download Assignment", command=download_assignment).pack(pady=5)
+    upload_button = tk.Button(dashboard_window, text="Upload Submission", command=upload_submission)
+    upload_button.pack(pady=5)
+
     tk.Button(dashboard_window, text="Logout", command=logout).pack(pady=5)
+    
 
     dashboard_window.mainloop()

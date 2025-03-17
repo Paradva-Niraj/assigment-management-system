@@ -28,6 +28,7 @@ app = FastAPI()
 # Dependency for DB session
 def get_db():
     db = SessionLocal()
+    print(db)
     try:
         yield db
     finally:
@@ -155,7 +156,6 @@ def generate_prn(db: Session) -> str:
 
 @app.post("/student/register")
 def register_student(student: StudentCreate, db: Session = Depends(get_db)):
-    # Generate PRN
     prn = generate_prn(db)
     hashed_password = get_password_hash(student.password)
     
@@ -192,9 +192,98 @@ def get_assignments(semester: str, db: Session = Depends(get_db)):
 
     return [{"id": a.id, "title": a.title, "subject": a.subject, "description": a.description, "file_path": a.file_path} for a in assignments]
 
+
+DOWNLOAD_DIR = "uploads/assignments"  # Ensure this directory exists
+
 @app.get("/download/{file_name}")
 async def download_file(file_name: str):
-    file_path = os.path.join("download", file_name)
-    if os.path.exists(file_path):
-        return FileResponse(file_path, filename=file_name)
-    return {"error": "File not found"}
+    file_path = os.path.join(DOWNLOAD_DIR, file_name)
+
+    # Ensure file exists
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Serve file with correct headers
+    return FileResponse(
+        file_path,
+        filename=file_name,
+        media_type="application/octet-stream"
+    )
+
+SUBMISSION_FOLDER = "uploads/submissions/"
+os.makedirs(SUBMISSION_FOLDER, exist_ok=True)
+@app.post("/student/upload_submission/")
+async def upload_submission(
+    assignment_id: int = Form(...),
+    student_prn: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    # Ensure it's a PDF
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    # Generate unique file name
+    filename = f"{student_prn}_{assignment_id}.pdf"
+    file_path = os.path.join(SUBMISSION_FOLDER, filename)
+
+    try:
+        # **Fix: Open file in binary write mode and write data properly**
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        file.file.close()  # Close file to prevent corruption
+
+        # Save submission to database
+        new_submission = Submission(
+            student_prn=student_prn,
+            assignment_id=assignment_id,
+            file_path=file_path
+        )
+        db.add(new_submission)
+        db.commit()
+        db.refresh(new_submission)
+
+        return {"message": "Submission uploaded successfully", "file_path": file_path}
+
+    except Exception as e:
+        return {"error": f"Upload failed: {str(e)}"}
+    
+
+@app.get("/faculty/assignment/{assignment_id}/submissions")
+def get_submissions_by_assignment(assignment_id: int, db: Session = Depends(get_db)):
+    try:
+        submissions = db.query(Submission).filter(Submission.assignment_id == assignment_id).all()
+        
+        if not submissions:
+            raise HTTPException(status_code=404, detail="No submissions found for this assignment")
+
+        return [
+            {
+                "id": sub.id,
+                "student_prn": sub.student_prn,
+                "file_path": sub.file_path,
+                "submitted_at": sub.submitted_at
+            }
+            for sub in submissions
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal Server Error: " + str(e))
+
+@app.get("/faculty/assignment/submission/{submission_id}/download")
+def download_submission(submission_id: int, db: Session = Depends(get_db)):
+    """
+    Download a submitted assignment by submission_id.
+    """
+    submission = db.query(Submission).filter(Submission.id == submission_id).first()
+
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    file_path = submission.file_path
+
+    if not os.path.exists(file_path):   
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(path=file_path, filename=os.path.basename(file_path), media_type="application/octet-stream")
+

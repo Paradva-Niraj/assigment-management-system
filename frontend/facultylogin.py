@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog
 import requests
 from fastapi import FastAPI, Form, UploadFile, File, Depends
-# import facultyreg
+from sklearn import tree
+
 
 
 API_URL = "http://127.0.0.1:8000"
@@ -119,21 +120,93 @@ def faculty_dashboard(email):
         else:
             messagebox.showerror("Error", "Failed to delete assignment")
 
-    # Add Delete Button
-    delete_button = tk.Button(dashboard_window, text="Delete Selected Assignment", command=delete_selected_assignment)
-    delete_button.pack(pady=5)
+    def view_assignment():
+        selected_item = tree.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Select an assignment to view submissions")
+            return
+
+        assignment_id = tree.item(selected_item)['values'][0]
+        response = requests.get(f"{API_URL}/faculty/assignment/{assignment_id}/submissions")
+
+        if response.status_code == 200:
+            submissions = response.json()
+
+            # Create new window for submissions
+            submissions_window = tk.Toplevel(dashboard_window)
+            submissions_window.title(f"Submissions for Assignment {assignment_id}")
+
+            # Create Treeview for submissions
+            submissions_tree = ttk.Treeview(submissions_window, columns=("ID", "Student PRN", "File Path", "Submitted At", "Download"), show="headings")
+
+            submissions_tree.heading("ID", text="ID")
+            submissions_tree.column("ID", width=50)
+            submissions_tree.heading("Student PRN", text="Student PRN")
+            submissions_tree.column("Student PRN", width=100)
+            submissions_tree.heading("File Path", text="File Path")
+            submissions_tree.column("File Path", width=200)
+            submissions_tree.heading("Submitted At", text="Submitted At")
+            submissions_tree.column("Submitted At", width=150)
+            submissions_tree.heading("Download", text="Download Submission")
+            submissions_tree.column("Download", width=150)
+
+            submissions_tree.pack(fill="both", expand=True)
+
+            # Function to download submission
+            def download_submission(event):
+                selected = submissions_tree.selection()
+                if not selected:
+                    messagebox.showerror("Error", "Select a submission to download")
+                    return
+
+                submission_id = submissions_tree.item(selected)["values"][0]  # Get submission ID
+                file_response = requests.get(f"{API_URL}/faculty/assignment/submission/{submission_id}/download", stream=True)
+
+                if file_response.status_code == 200:
+                    # Extract filename from Content-Disposition header
+                    content_disposition = file_response.headers.get("Content-Disposition", "")
+                    filename = "submission.pdf"  # Default filename
+                    
+                    if "filename=" in content_disposition:
+                        filename = content_disposition.split("filename=")[-1].strip().replace('"', '')
+
+                    # Ask where to save, setting the default filename
+                    file_path = filedialog.asksaveasfilename(defaultextension=".pdf", initialfile=filename, filetypes=[("PDF files", "*.pdf"), ("All Files", "*.*")])
+                    
+                    if file_path:
+                        with open(file_path, "wb") as file:
+                            file.write(file_response.content)
+                        
+                        messagebox.showinfo("Success", f"File downloaded successfully!\nSaved at: {file_path}")
+                else:
+                    messagebox.showerror("Error", "Failed to download file")
+
+
+            # Insert submissions into Treeview
+            for sub in submissions:
+                submissions_tree.insert("", "end", values=(sub["id"], sub["student_prn"], sub["file_path"], sub["submitted_at"], "Download"))
+
+            # Bind double-click to download submission
+            submissions_tree.bind("<Double-1>", download_submission)
+
+        else:
+            messagebox.showerror("Error", "Failed to fetch assignment submissions")
+
 
     def logout():
         dashboard_window.destroy()
         facultylogin()
+
+    # Add Delete Button
+    delete_button = tk.Button(dashboard_window, text="Delete Selected Assignment", command=delete_selected_assignment)
+    delete_button.pack(pady=5)
+
     # Add Refresh Button
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)
     tk.Button(dashboard_window, text="Upload Assignment", command=lambda: upload_assignment(email, dashboard_window)).pack(pady=5)
+    tk.Button(dashboard_window, text="View Submissions", command=view_assignment).pack(pady=5)
     tk.Button(dashboard_window, text="Logout", command=logout).pack(pady=5)
-
     dashboard_window.mainloop()
-
-
 
 def upload_assignment(email, parent_window):
     upload_window = tk.Toplevel(parent_window)
@@ -194,20 +267,3 @@ def upload_assignment(email, parent_window):
             messagebox.showerror("Error", result.get("message", "Upload failed!"))
 
     tk.Button(upload_window, text="Upload", command=submit_assignment).pack(pady=10)
-
-# def delete_assignment():
-#     selected_index = listbox.curselection()
-#     if not selected_index:
-#         messagebox.showerror("Error", "Please select an assignment to delete")
-#         return
-
-#     selected_text = listbox.get(selected_index)
-#     assignment_id = selected_text.split("-")[0].strip()  # Assuming ID is included in the listbox item
-
-#     response = requests.delete(f"{API_URL}/faculty/delete_assignment/{assignment_id}")
-    
-#     if response.status_code == 200:
-#         messagebox.showinfo("Success", "Assignment deleted successfully")
-#         fetch_assignments()  # Refresh list
-#     else:
-#         messagebox.showerror("Error", "Failed to delete assignment")

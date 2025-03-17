@@ -42,7 +42,9 @@ class Submission(Base):
     __tablename__ = 'submissions'
 
     id = Column(Integer, primary_key=True, index=True)
-    student_name = Column(String)
+    student_prn = Column(String, ForeignKey('students.prn'))  # Store PRN instead of name
     assignment_id = Column(Integer, ForeignKey('assignments.id'))
     file_path = Column(String)
     submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    student = relationship("Student")
+    assignment = relationship("Assignment")

@@ -24,8 +24,11 @@ def studentregistration(r):
         
         try:
             response = requests.post(API_URL, json=payload)
+            data = response.json()  # Convert response to dictionary
+
             if response.status_code == 200:
-                messagebox.showinfo("Success", "Student registered successfully!")
+                prn = data.get("prn", "N/A")  # Extract PRN safely
+                messagebox.showinfo("Success", f"Student registered successfully!\nPRN: {prn}")
                 root.destroy()
             elif response.status_code == 400:
                 messagebox.showerror("Error", "PRN already registered!")
