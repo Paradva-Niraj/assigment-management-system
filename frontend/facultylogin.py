@@ -123,10 +123,13 @@ def faculty_dashboard(email):
     delete_button = tk.Button(dashboard_window, text="Delete Selected Assignment", command=delete_selected_assignment)
     delete_button.pack(pady=5)
 
+    def logout():
+        dashboard_window.destroy()
+        facultylogin()
     # Add Refresh Button
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)
     tk.Button(dashboard_window, text="Upload Assignment", command=lambda: upload_assignment(email, dashboard_window)).pack(pady=5)
-    tk.Button(dashboard_window, text="Logout", command=dashboard_window.destroy).pack(pady=5)
+    tk.Button(dashboard_window, text="Logout", command=logout).pack(pady=5)
 
     dashboard_window.mainloop()
 

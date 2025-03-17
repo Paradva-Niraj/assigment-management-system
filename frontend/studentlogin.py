@@ -4,7 +4,7 @@ import requests
 import os
 
 API_URL = "http://127.0.0.1:8000"
-
+    
 def studentlogin():
     login_window = tk.Tk()
     login_window.title("Student Login")
@@ -110,15 +110,16 @@ def student_dashboard(prn, semester):
             messagebox.showerror("Error", "No file available for this assignment.")
             return
 
+        file_name = os.path.basename(file_path)  
         save_location = filedialog.asksaveasfilename(
-            initialfile=os.path.basename(file_path),
+            initialfile=file_name,
             defaultextension="",
             filetypes=[("All Files", "*.*")]
         )
 
         if save_location:
             try:
-                file_response = requests.get(f"{API_URL}/{file_path}", stream=True)
+                file_response = requests.get(f"{API_URL}/download/{file_name}", stream=True)
                 if file_response.status_code == 200:
                     with open(save_location, "wb") as f:
                         for chunk in file_response.iter_content(chunk_size=1024):
@@ -130,9 +131,11 @@ def student_dashboard(prn, semester):
                 messagebox.showerror("Error", f"Download failed: {e}")
 
     fetch_assignments()
-
+    def logout():
+        dashboard_window.destroy()  # Close the dashboard window
+        studentlogin() 
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)
     tk.Button(dashboard_window, text="Download Assignment", command=download_assignment).pack(pady=5)
-    tk.Button(dashboard_window, text="Logout", command=dashboard_window.destroy).pack(pady=5)
+    tk.Button(dashboard_window, text="Logout", command=logout).pack(pady=5)
 
     dashboard_window.mainloop()

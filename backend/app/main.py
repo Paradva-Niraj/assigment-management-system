@@ -1,3 +1,4 @@
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile,status,Form
 from fastapi.params import Body
 # from.database import engine, SessionLocal
@@ -191,9 +192,9 @@ def get_assignments(semester: str, db: Session = Depends(get_db)):
 
     return [{"id": a.id, "title": a.title, "subject": a.subject, "description": a.description, "file_path": a.file_path} for a in assignments]
 
-@app.get("{file_path:path}")
-def download_file(file_path: str):
-    file_location = os.path.join("uploads", file_path)  # Ensure correct folder
-    if not os.path.exists(file_location):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_location)
+@app.get("/download/{file_name}")
+async def download_file(file_name: str):
+    file_path = os.path.join("download", file_name)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, filename=file_name)
+    return {"error": "File not found"}
