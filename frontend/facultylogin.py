@@ -201,10 +201,33 @@ def faculty_dashboard(email):
     delete_button = tk.Button(dashboard_window, text="Delete Selected Assignment", command=delete_selected_assignment)
     delete_button.pack(pady=5)
 
+    def change_password(email):
+        old_password = simpledialog.askstring("Change Password", "Enter Old Password:", show="*")
+        if not old_password:
+            return
+
+        new_password = simpledialog.askstring("Change Password", "Enter New Password:", show="*")
+        if not new_password:
+            return
+
+        confirm_password = simpledialog.askstring("Change Password", "Confirm New Password:", show="*")
+        if new_password != confirm_password:
+            messagebox.showerror("Error", "New passwords do not match!")
+            return
+
+        response = requests.put(f"{API_URL}/faculty/change-password",
+                                json={"email": email, "old_password": old_password, "new_password": new_password})
+
+        if response.status_code == 200:
+            messagebox.showinfo("Success", "Password changed successfully!")
+        else:
+            messagebox.showerror("Error", response.json().get("detail", "Failed to change password"))
+
     # Add Refresh Button
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)
     tk.Button(dashboard_window, text="Upload Assignment", command=lambda: upload_assignment(email, dashboard_window)).pack(pady=5)
     tk.Button(dashboard_window, text="View Submissions", command=view_assignment).pack(pady=5)
+    tk.Button(dashboard_window, text="Change Password", command=lambda: change_password(email)).pack(pady=5)
     tk.Button(dashboard_window, text="Logout", command=logout).pack(pady=5)
     dashboard_window.mainloop()
 

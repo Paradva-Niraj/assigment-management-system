@@ -1,3 +1,4 @@
+from multiprocessing import get_context
 from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile,status,Form
 from fastapi.params import Body
@@ -287,3 +288,43 @@ def download_submission(submission_id: int, db: Session = Depends(get_db)):
 
     return FileResponse(path=file_path, filename=os.path.basename(file_path), media_type="application/octet-stream")
 
+def verify_password(plain_password, hashed_password):
+    return get_context.verify(plain_password, hashed_password)
+
+# Function to hash new password
+def get_password_hash(password):
+    return get_context.hash(password)
+
+# ✅ Change Faculty Password API
+@app.put("/faculty/change-password")
+def change_faculty_password(email: str, old_password: str, new_password: str, db: Session = Depends(get_db)):
+    faculty = db.query(Faculty).filter(Faculty.email == email).first()
+
+    if not faculty:
+        raise HTTPException(status_code=404, detail="Faculty not found")
+
+    if not verify_password(old_password, faculty.password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+    # Update password
+    faculty.password = get_password_hash(new_password)
+    db.commit()
+
+    return {"message": "Password updated successfully!"}
+
+# ✅ Change Student Password API
+@app.put("/student/change-password")
+def change_student_password(prn: str, old_password: str, new_password: str, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.prn == prn).first()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if not verify_password(old_password, student.password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+    # Update password
+    student.password = get_password_hash(new_password)
+    db.commit()
+
+    return {"message": "Password updated successfully!"}

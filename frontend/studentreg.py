@@ -1,8 +1,24 @@
 import tkinter as tk
 from tkinter import messagebox
 import requests
+import openpyxl
+import os
 
 API_URL = "http://127.0.0.1:8000/student/register"
+
+EXCEL_FILE = "student_records.xlsx"
+
+if not os.path.exists(EXCEL_FILE):
+        # Create a new workbook and sheet
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Student Data"
+
+        # Add headers
+        sheet.append(["prn","name", "Password"])
+
+        # Save the file
+        workbook.save(EXCEL_FILE)
 
 def studentregistration(r):
     root = tk.Toplevel(r)
@@ -28,6 +44,11 @@ def studentregistration(r):
 
             if response.status_code == 200:
                 prn = data.get("prn", "N/A")  # Extract PRN safely
+                wb=openpyxl.load_workbook("student_records.xlsx")
+                sheet = wb.active
+
+                sheet.append([prn,name,password])
+                wb.save("student_records.xlsx")
                 messagebox.showinfo("Success", f"Student registered successfully!\nPRN: {prn}")
                 root.destroy()
             elif response.status_code == 400:

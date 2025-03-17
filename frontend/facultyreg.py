@@ -1,11 +1,26 @@
 import tkinter as tk
 from tkinter import messagebox
 import requests
+import openpyxl
+import os
 
 # FastAPI URL
 API_URL = "http://127.0.0.1:8000/faculty/register"
 
 # Create GUI Window
+EXCEL_FILE = "faculty_records.xlsx"
+
+if not os.path.exists(EXCEL_FILE):
+        # Create a new workbook and sheet
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Faculty Data"
+
+        # Add headers
+        sheet.append(["Email", "Password"])
+
+        # Save the file
+        workbook.save(EXCEL_FILE)
 
 def facultyregistration(r):
     root = tk.Toplevel(r)
@@ -35,6 +50,12 @@ def facultyregistration(r):
             # Check Response
             if response.status_code == 200:
                 # messagebox.showinfo("Success", "Faculty registered successfully!")
+                wb = openpyxl.load_workbook("faculty_records.xlsx")
+                sheet = wb.active
+
+# Add new data
+                sheet.append([email, password])
+                wb.save("faculty_records.xlsx")
                 email_entry.delete(0, tk.END)
                 password_entry.delete(0, tk.END)
             elif response.status_code == 400:
