@@ -7,7 +7,7 @@ from .models import Base, Faculty, Assignment, Submission, Student
 from .auth import create_access_token, hash_password, verify_password, get_current_user
 # from sqlalchemy.orm import Session
 # from pydantic import BaseModel
-
+import bcrypt
 # from.models import Faculty
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -288,12 +288,15 @@ def download_submission(submission_id: int, db: Session = Depends(get_db)):
 
     return FileResponse(path=file_path, filename=os.path.basename(file_path), media_type="application/octet-stream")
 
-def verify_password(plain_password, hashed_password):
-    return get_context.verify(plain_password, hashed_password)
 
-# Function to hash new password
-def get_password_hash(password):
-    return get_context.hash(password)
+def get_password_hash(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode(), salt)
+    return hashed_password.decode()
+
+# Function to verify a password
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 # ✅ Change Faculty Password API
 @app.put("/faculty/change-password")

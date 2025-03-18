@@ -201,6 +201,7 @@ def faculty_dashboard(email):
     delete_button = tk.Button(dashboard_window, text="Delete Selected Assignment", command=delete_selected_assignment)
     delete_button.pack(pady=5)
 
+
     def change_password(email):
         old_password = simpledialog.askstring("Change Password", "Enter Old Password:", show="*")
         if not old_password:
@@ -215,13 +216,26 @@ def faculty_dashboard(email):
             messagebox.showerror("Error", "New passwords do not match!")
             return
 
-        response = requests.put(f"{API_URL}/faculty/change-password",
-                                json={"email": email, "old_password": old_password, "new_password": new_password})
+        # Send data as query parameters
+        response = requests.put(
+            f"{API_URL}/faculty/change-password",
+            params={
+                "email": email,
+                "old_password": old_password,
+                "new_password": new_password
+            }
+        )
+
+        try:
+            result = response.json()
+        except requests.exceptions.JSONDecodeError:
+            messagebox.showerror("Error", "Invalid server response")
+            return
 
         if response.status_code == 200:
-            messagebox.showinfo("Success", "Password changed successfully!")
+            messagebox.showinfo("Success", result.get("message", "Password changed successfully!"))
         else:
-            messagebox.showerror("Error", response.json().get("detail", "Failed to change password"))
+            messagebox.showerror("Error", result.get("detail", "Failed to change password"))
 
     # Add Refresh Button
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)

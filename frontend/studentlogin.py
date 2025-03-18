@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
+from tkinter import simpledialog
 import requests
 import os
 
@@ -159,14 +160,40 @@ def student_dashboard(prn, semester):
             messagebox.showerror("Error", "Failed to upload submission")
 
     fetch_assignments()
+    
     def logout():
         dashboard_window.destroy()  # Close the dashboard window
         studentlogin() 
+    
+    def change_student_password():
+        old_password = simpledialog.askstring("Change Password", "Enter Old Password:", show="*")
+        if not old_password:
+            return
+
+        new_password = simpledialog.askstring("Change Password", "Enter New Password:", show="*")
+        if not new_password:
+            return
+
+        confirm_password = simpledialog.askstring("Change Password", "Confirm New Password:", show="*")
+        if new_password != confirm_password:
+            messagebox.showerror("Error", "New passwords do not match!")
+            return
+
+        response = requests.put(
+            f"{API_URL}/student/change-password",
+            params={"prn": prn, "old_password": old_password, "new_password": new_password}
+        )
+
+        if response.status_code == 200:
+            messagebox.showinfo("Success", "Password changed successfully!")
+        else:
+            messagebox.showerror("Error", response.json().get("detail", "Failed to change password"))
+
     tk.Button(dashboard_window, text="Refresh", command=fetch_assignments).pack(pady=5)
     tk.Button(dashboard_window, text="Download Assignment", command=download_assignment).pack(pady=5)
     upload_button = tk.Button(dashboard_window, text="Upload Submission", command=upload_submission)
     upload_button.pack(pady=5)
-
+    tk.Button(dashboard_window, text="Chnage password", command=change_student_password).pack(pady=5)
     tk.Button(dashboard_window, text="Logout", command=logout).pack(pady=5)
     
 
