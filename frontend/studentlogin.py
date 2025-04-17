@@ -163,8 +163,11 @@ def student_dashboard(prn, semester):
     
     def logout():
         dashboard_window.destroy()  # Close the dashboard window
-        studentlogin() 
-    
+        from main import mainloop
+        mainloop()
+
+        # studentlogin()
+
     def change_student_password():
         old_password = simpledialog.askstring("Change Password", "Enter Old Password:", show="*")
         if not old_password:

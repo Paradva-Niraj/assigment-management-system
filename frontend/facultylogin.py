@@ -195,7 +195,9 @@ def faculty_dashboard(email):
 
     def logout():
         dashboard_window.destroy()
-        facultylogin()
+        from main import mainloop
+        mainloop()
+        # facultylogin()
 
     # Add Delete Button
     delete_button = tk.Button(dashboard_window, text="Delete Selected Assignment", command=delete_selected_assignment)

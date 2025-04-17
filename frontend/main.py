@@ -28,13 +28,16 @@ def open_student_login():
 
 # Main Application Window
 root = tk.Tk()
-root.title("Assignment management system")
-root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0")
-root.resizable(False, False)
+def mainloop():
+    root.title("Assignment management system")
+    root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0")
+    root.resizable(False, False)
 
-tk.Label(root, text="Welcome to Faculty Management", font=("Arial", 14, "bold")).pack(pady=20)
+    tk.Label(root, text="Welcome to Faculty Management", font=("Arial", 14, "bold")).pack(pady=20)
 
-tk.Button(root, text="Faculty Login", width=20, command=lambda: open_login()).pack(pady=10)
-tk.Button(root, text="Student Login", width=20, command=lambda: open_student_login()).pack(pady=10)
+    tk.Button(root, text="Faculty Login", width=20, command=lambda: open_login()).pack(pady=10)
+    tk.Button(root, text="Student Login", width=20, command=lambda: open_student_login()).pack(pady=10)
 
-root.mainloop()
+    root.mainloop()
+
+mainloop()
