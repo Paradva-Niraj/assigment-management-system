@@ -5,8 +5,9 @@ from fastapi import FastAPI, Form, UploadFile, File, Depends
 from sklearn import tree
 
 
-
-API_URL = "http://127.0.0.1:8000"
+# local url
+# API_URL = "http://127.0.0.1:8000"
+API_URL = "https://assigment-management-system.onrender.com"
 access_token = None
 
 def facultylogin():

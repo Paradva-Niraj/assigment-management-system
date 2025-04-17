@@ -4,7 +4,10 @@ from tkinter import simpledialog
 import requests
 import os
 
-API_URL = "http://127.0.0.1:8000"
+# local 
+# API_URL = "http://127.0.0.1:8000"
+API_URL = "https://assigment-management-system.onrender.com"
+
     
 def studentlogin():
     login_window = tk.Tk()
