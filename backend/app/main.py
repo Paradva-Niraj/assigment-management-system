@@ -22,9 +22,11 @@ from datetime import datetime
 import shutil
 import os
 
-@app.get("/")
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Welcome to the API"}
 
 # Dependency for DB session
 def get_db():
