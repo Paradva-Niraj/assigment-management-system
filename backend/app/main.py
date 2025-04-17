@@ -22,7 +22,7 @@ from datetime import datetime
 import shutil
 import os
 
-
+@app.get("/")
 app = FastAPI()
 
 
