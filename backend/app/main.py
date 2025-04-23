@@ -333,3 +333,12 @@ def change_student_password(prn: str, old_password: str, new_password: str, db: 
     db.commit()
 
     return {"message": "Password updated successfully!"}
+
+@app.get("/student/check_submission")
+def check_submission(assignment_id: int, student_prn: str, db: Session = Depends(get_db)):
+    submission = db.query(Submission).filter(
+        Submission.assignment_id == assignment_id,
+        Submission.student_prn == student_prn
+    ).first()
+
+    return {"submitted": submission is not None}

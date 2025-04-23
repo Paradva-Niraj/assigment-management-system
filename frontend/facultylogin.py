@@ -6,8 +6,8 @@ from sklearn import tree
 
 
 # local url
-API_URL = "http://127.0.0.1:8000"
-# API_URL = "https://assigment-management-system.onrender.com"
+# API_URL = "http://127.0.0.1:8000"
+API_URL = "https://assigment-management-system.onrender.com"
 access_token = None
 
 def facultylogin():
@@ -251,59 +251,72 @@ def faculty_dashboard(email):
 def upload_assignment(email, parent_window):
     upload_window = tk.Toplevel(parent_window)
     upload_window.title("Upload Assignment")
-    upload_window.geometry(f"{upload_window.winfo_screenwidth()}x{upload_window.winfo_screenheight()}+0+0")
+    upload_window.geometry("500x400")
+    upload_window.resizable(False, False)
 
+    form_frame = tk.Frame(upload_window)
+    form_frame.pack(padx=20, pady=20)
 
-    tk.Label(upload_window, text="Title:").pack(anchor="w", padx=20)
-    title_entry = tk.Entry(upload_window, width=40)
-    title_entry.pack(pady=5, padx=20)
+    # Title
+    tk.Label(form_frame, text="Title:").grid(row=0, column=0, sticky="w", pady=5)
+    title_entry = tk.Entry(form_frame, width=40)
+    title_entry.grid(row=0, column=1, pady=5)
 
-    tk.Label(upload_window, text="Description:").pack(anchor="w", padx=20)
-    desc_entry = tk.Entry(upload_window, width=40)
-    desc_entry.pack(pady=5, padx=20)
+    # Description
+    tk.Label(form_frame, text="Description:").grid(row=1, column=0, sticky="w", pady=5)
+    desc_entry = tk.Entry(form_frame, width=40)
+    desc_entry.grid(row=1, column=1, pady=5)
 
-    tk.Label(upload_window, text="Semester:").pack(anchor="w", padx=20)
-    sem_entry = tk.Entry(upload_window, width=40)
-    sem_entry.pack(pady=5, padx=20)
+    # Semester
+    tk.Label(form_frame, text="Semester:").grid(row=2, column=0, sticky="w", pady=5)
+    sem_entry = tk.Entry(form_frame, width=40)
+    sem_entry.grid(row=2, column=1, pady=5)
 
-    tk.Label(upload_window, text="Subject:").pack(anchor="w", padx=20)
-    sub_entry = tk.Entry(upload_window, width=40)
-    sub_entry.pack(pady=5, padx=20)
+    # Subject
+    tk.Label(form_frame, text="Subject:").grid(row=3, column=0, sticky="w", pady=5)
+    sub_entry = tk.Entry(form_frame, width=40)
+    sub_entry.grid(row=3, column=1, pady=5)
 
+    # File Path
     file_path = tk.StringVar()
 
     def choose_file():
-        path = filedialog.askopenfilename()
+        path = filedialog.askopenfilename(parent=form_frame)
         file_path.set(path)
 
-    tk.Button(upload_window, text="Choose File", command=choose_file).pack(pady=5)
+    tk.Button(form_frame, text="Choose File", command=choose_file).grid(row=4, column=1, pady=2, sticky="w")
+    tk.Label(form_frame, textvariable=file_path, wraplength=300, fg="gray").grid(row=4, column=2, sticky="w")
 
+    # Submit Button
     def submit_assignment():
         if not (title_entry.get() and desc_entry.get() and sem_entry.get() and sub_entry.get() and file_path.get()):
-            messagebox.showerror("Error", "All fields are required!")
+            messagebox.showerror("Error", "All fields are required!", parent=upload_window)
             return
 
-        files = {"file": open(file_path.get(), "rb")}
-        data = {
-            "title": title_entry.get(),
-            "description": desc_entry.get(),
-            "semester": sem_entry.get(),
-            "subject": sub_entry.get(),
-            "uploaded_by": email
-        }
-
-        response = requests.post(f"{API_URL}/faculty/upload_assignment", data=data, files=files)
-        
         try:
-            result = response.json()
-        except requests.exceptions.JSONDecodeError:
-            messagebox.showerror("Error", "Invalid server response")
-            return
+            with open(file_path.get(), "rb") as f:
+                files = {"file": f}
+                data = {
+                    "title": title_entry.get(),
+                    "description": desc_entry.get(),
+                    "semester": sem_entry.get(),
+                    "subject": sub_entry.get(),
+                    "uploaded_by": email
+                }
+                response = requests.post(f"{API_URL}/faculty/upload_assignment", data=data, files=files)
 
-        if response.status_code == 200:
-            messagebox.showinfo("Success", "Assignment uploaded successfully!")
-            upload_window.destroy()
-        else:
-            messagebox.showerror("Error", result.get("message", "Upload failed!"))
+            try:
+                result = response.json()
+            except requests.exceptions.JSONDecodeError:
+                messagebox.showerror("Error", "Invalid server response", parent=upload_window)
+                return
 
-    tk.Button(upload_window, text="Upload", command=submit_assignment).pack(pady=10)
+            if response.status_code == 200:
+                messagebox.showinfo("Success", "Assignment uploaded successfully!", parent=upload_window)
+                upload_window.destroy()
+            else:
+                messagebox.showerror("Error", result.get("message", "Upload failed!"), parent=upload_window)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"File open failed: {e}", parent=upload_window)
+    tk.Button(form_frame, text="Upload", command=submit_assignment).grid(row=6, column=1, pady=20, sticky="w")

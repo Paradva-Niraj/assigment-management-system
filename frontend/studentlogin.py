@@ -5,8 +5,8 @@ import requests
 import os
 
 # local 
-API_URL = "http://127.0.0.1:8000"
-# API_URL = "https://assigment-management-system.onrender.com"
+# API_URL = "http://127.0.0.1:8000"
+API_URL = "https://assigment-management-system.onrender.com"
 
     
 def studentlogin():
@@ -148,19 +148,36 @@ def student_dashboard(prn, semester):
         item = tree.item(selected_item)
         assignment_id = item["values"][0]  # Extract assignment ID
 
+        # Step 1: Check if already submitted
+        check_resp = requests.get(f"{API_URL}/student/check_submission", params={
+            "assignment_id": assignment_id,
+            "student_prn": prn
+        })
+
+        if check_resp.status_code == 200 and check_resp.json().get("submitted"):
+            messagebox.showwarning("Already Submitted", "You have already submitted this assignment.")
+            return
+
+        # Step 2: Choose PDF file
         file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
         if not file_path:
             return
 
-        files = {"file": open(file_path, "rb")}
-        data = {"assignment_id": assignment_id, "student_prn": prn}
+        try:
+            with open(file_path, "rb") as f:
+                files = {"file": f}
+                data = {"assignment_id": assignment_id, "student_prn": prn}
 
-        response = requests.post(f"{API_URL}/student/upload_submission/", files=files, data=data)
+                response = requests.post(f"{API_URL}/student/upload_submission/", files=files, data=data)
 
-        if response.status_code == 200:
-            messagebox.showinfo("Success", "Submission uploaded successfully!")
-        else:
-            messagebox.showerror("Error", "Failed to upload submission")
+            if response.status_code == 200:
+                messagebox.showinfo("Success", "Submission uploaded successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to upload submission")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
 
     fetch_assignments()
     
