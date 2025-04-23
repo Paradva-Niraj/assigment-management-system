@@ -5,8 +5,8 @@ import openpyxl
 import os
 
 # FastAPI URL local
-# API_URL = "http://127.0.0.1:8000/faculty/register"
-API_URL = "https://assigment-management-system.onrender.com/faculty/register"
+API_URL = "http://127.0.0.1:8000/faculty/register"
+# API_URL = "https://assigment-management-system.onrender.com/faculty/register"
 
 # Create GUI Window
 EXCEL_FILE = "faculty_records.xlsx"

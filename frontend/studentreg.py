@@ -5,8 +5,8 @@ import openpyxl
 import os
 
 # local
-# API_URL = "http://127.0.0.1:8000/student/register"
-API_URL = "https://assigment-management-system.onrender.com/student/register"
+API_URL = "http://127.0.0.1:8000/student/register"
+# API_URL = "https://assigment-management-system.onrender.com/student/register"
 
 EXCEL_FILE = "student_records.xlsx"
 

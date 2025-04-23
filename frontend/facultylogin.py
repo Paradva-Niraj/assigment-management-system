@@ -6,8 +6,8 @@ from sklearn import tree
 
 
 # local url
-# API_URL = "http://127.0.0.1:8000"
-API_URL = "https://assigment-management-system.onrender.com"
+API_URL = "http://127.0.0.1:8000"
+# API_URL = "https://assigment-management-system.onrender.com"
 access_token = None
 
 def facultylogin():
